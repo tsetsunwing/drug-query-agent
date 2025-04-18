@@ -5,10 +5,21 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>藥物查詢AI Agent</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <style>
+    #response {
+      max-height: 400px; /* 更大嘅窗口 */
+      overflow-y: auto; /* 自動捲軸 */
+      white-space: pre-wrap; /* 保持格式 */
+      word-wrap: break-word; /* 自動換行 */
+    }
+  </style>
 </head>
-<body class="bg-gray-100 flex items-center justify-center h-screen">
-  <div class="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
+<body class="bg-gray-100 flex items-center justify-center min-h-screen transition-all duration-300" id="theme-body">
+  <div class="bg-white p-6 rounded-lg shadow-lg w-full max-w-2xl">
     <h1 class="text-2xl font-bold text-center mb-4">藥物查詢AI Agent</h1>
+    
+    <!-- 輸入框 -->
     <input
       id="query"
       type="text"
@@ -17,11 +28,41 @@
     />
     <button
       onclick="sendQuery()"
-      class="w-full bg-blue-500 text-white p-2 rounded hover:bg-blue-600"
+      class="w-full bg-blue-500 text-white p-2 rounded hover:bg-blue-600 mb-4"
     >
       提交查詢
     </button>
-    <div id="response" class="mt-4 p-4 bg-gray-50 rounded border"></div>
+
+    <!-- 設定介面 -->
+    <div class="mb-4 grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div>
+        <label class="block text-sm font-medium mb-1">字型</label>
+        <select id="font-family" class="w-full p-2 border rounded" onchange="updateStyles()">
+          <option value="Arial">Arial</option>
+          <option value="Times New Roman">Times New Roman</option>
+          <option value="Courier New">Courier New</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-1">字體大小</label>
+        <select id="font-size" class="w-full p-2 border rounded" onchange="updateStyles()">
+          <option value="12px">12px</option>
+          <option value="16px" selected>16px</option>
+          <option value="20px">20px</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-1">主題</label>
+        <select id="theme" class="w-full p-2 border rounded" onchange="updateStyles()">
+          <option value="light">淺色</option>
+          <option value="dark">深色</option>
+          <option value="blue">藍色</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- 回應區 -->
+    <div id="response" class="mt-4 p-4 bg-gray-50 rounded border text-base"></div>
   </div>
 
   <script>
@@ -37,11 +78,43 @@
           body: JSON.stringify({ query }),
         });
         const data = await response.json();
-        responseDiv.innerHTML = data.response || "無回應";
+        if (data.response) {
+          // 用 marked 解析 Markdown
+          responseDiv.innerHTML = marked.parse(data.response);
+        } else {
+          responseDiv.innerHTML = "無回應";
+        }
       } catch (error) {
         responseDiv.innerHTML = "錯誤：無法連繫AI，請稍後再試。";
       }
     }
+
+    function updateStyles() {
+      const responseDiv = document.getElementById("response");
+      const fontFamily = document.getElementById("font-family").value;
+      const fontSize = document.getElementById("font-size").value;
+      const theme = document.getElementById("theme").value;
+      const body = document.getElementById("theme-body");
+
+      // 更新回應區字型同大小
+      responseDiv.style.fontFamily = fontFamily;
+      responseDiv.style.fontSize = fontSize;
+
+      // 更新主題
+      if (theme === "light") {
+        body.className = "bg-gray-100 flex items-center justify-center min-h-screen transition-all duration-300";
+        responseDiv.className = "mt-4 p-4 bg-gray-50 rounded border text-base";
+      } else if (theme === "dark") {
+        body.className = "bg-gray-800 flex items-center justify-center min-h-screen transition-all duration-300";
+        responseDiv.className = "mt-4 p-4 bg-gray-700 text-white rounded border border-gray-600 text-base";
+      } else if (theme === "blue") {
+        body.className = "bg-blue-100 flex items-center justify-center min-h-screen transition-all duration-300";
+        responseDiv.className = "mt-4 p-4 bg-blue-50 text-blue-900 rounded border border-blue-200 text-base";
+      }
+    }
+
+    // 初次載入時應用預設樣式
+    updateStyles();
   </script>
 </body>
 </html>
