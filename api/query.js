@@ -10,17 +10,23 @@ export default async function handler(req, res) {
 
   try {
     const fetch = (await import("node-fetch")).default;
+
+    // 加 timeout 控制（15秒）
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000);
+
     const response = await fetch("https://api.x.ai/v1/chat/completions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         "Authorization": `Bearer ${process.env.XAI_API_KEY}`,
       },
+      signal: controller.signal,
       body: JSON.stringify({
         messages: [
           {
             role: "system",
-            content: "你是一個藥物查詢助手，專為醫護人員設計。請以簡潔、專業的繁體中文回應查詢，確保資訊準確並符合醫療標準。",
+            content: "你是一個藥物查詢助手，專為醫護人員設計。請以簡潔、專業的繁體中文回應查詢，確保資訊準確並符合醫療標準。用 Markdown 格式（例如粗體、列表）回應。",
           },
           {
             role: "user",
@@ -34,6 +40,8 @@ export default async function handler(req, res) {
       }),
     });
 
+    clearTimeout(timeoutId);
+
     if (!response.ok) {
       const errorText = await response.text();
       console.error(`xAI API 出錯：狀態碼 ${response.status}, 訊息：${errorText}`);
@@ -46,6 +54,8 @@ export default async function handler(req, res) {
     let answer = "";
     if (data.choices && Array.isArray(data.choices) && data.choices[0] && data.choices[0].message && data.choices[0].message.content) {
       answer = data.choices[0].message.content.trim();
+    } else if (data.choices && Array.isArray(data.choices) && data.choices[0] && data.choices[0].text) {
+      answer = data.choices[0].text.trim();
     } else if (data.text) {
       answer = data.text.trim();
     } else if (data.message) {
@@ -64,6 +74,9 @@ export default async function handler(req, res) {
     res.status(200).json({ response: answer });
   } catch (error) {
     console.error("程式出錯：", error.message);
-    res.status(500).json({ error: `無法獲取回應：${error.message}` });
+    if (error.name === "AbortError") {
+      return res.status(504).json({ error: "API 請求超時，請稍後再試。" });
+    }
+    res.status(500).json({ error: `無法連繫 xAI API：${error.message}` });
   }
 }
