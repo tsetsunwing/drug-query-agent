@@ -8,15 +8,40 @@
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <style>
     #response {
-      max-height: 400px; /* 更大嘅窗口 */
+      min-height: 200px; /* 最小高度 */
+      max-height: 80vh; /* 最大佔螢幕 80% */
       overflow-y: auto; /* 自動捲軸 */
       white-space: pre-wrap; /* 保持格式 */
       word-wrap: break-word; /* 自動換行 */
     }
+    /* 優化捲軸樣式 */
+    #response::-webkit-scrollbar {
+      width: 8px;
+    }
+    #response::-webkit-scrollbar-track {
+      background: #f1f1f1;
+    }
+    #response::-webkit-scrollbar-thumb {
+      background: #888;
+      border-radius: 4px;
+    }
+    #response::-webkit-scrollbar-thumb:hover {
+      background: #555;
+    }
+    /* 確保 Markdown 渲染整齊 */
+    .prose {
+      max-width: 100%;
+      line-height: 1.6;
+    }
+    /* 響應式容器 */
+    .container {
+      width: 95%; /* 手機用 95% 寬 */
+      max-width: 1024px; /* 電腦最多 1024px */
+    }
   </style>
 </head>
 <body class="bg-gray-100 flex items-center justify-center min-h-screen transition-all duration-300" id="theme-body">
-  <div class="bg-white p-6 rounded-lg shadow-lg w-full max-w-2xl">
+  <div class="container bg-white p-6 rounded-lg shadow-lg mx-auto">
     <h1 class="text-2xl font-bold text-center mb-4">藥物查詢AI Agent</h1>
     
     <!-- 輸入框 -->
@@ -62,7 +87,7 @@
     </div>
 
     <!-- 回應區 -->
-    <div id="response" class="mt-4 p-4 bg-gray-50 rounded border text-base"></div>
+    <div id="response" class="mt-4 p-4 bg-gray-50 rounded border text-base prose"></div>
   </div>
 
   <script>
@@ -103,13 +128,13 @@
       // 更新主題
       if (theme === "light") {
         body.className = "bg-gray-100 flex items-center justify-center min-h-screen transition-all duration-300";
-        responseDiv.className = "mt-4 p-4 bg-gray-50 rounded border text-base";
+        responseDiv.className = "mt-4 p-4 bg-gray-50 rounded border text-base prose";
       } else if (theme === "dark") {
         body.className = "bg-gray-800 flex items-center justify-center min-h-screen transition-all duration-300";
-        responseDiv.className = "mt-4 p-4 bg-gray-700 text-white rounded border border-gray-600 text-base";
+        responseDiv.className = "mt-4 p-4 bg-gray-700 text-white rounded border border-gray-600 text-base prose";
       } else if (theme === "blue") {
         body.className = "bg-blue-100 flex items-center justify-center min-h-screen transition-all duration-300";
-        responseDiv.className = "mt-4 p-4 bg-blue-50 text-blue-900 rounded border border-blue-200 text-base";
+        responseDiv.className = "mt-4 p-4 bg-blue-50 text-blue-900 rounded border border-blue-200 text-base prose";
       }
     }
 
