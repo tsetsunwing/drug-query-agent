@@ -8,36 +8,37 @@
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <style>
     #response {
-      height: auto; /* 全顯示 */
-      min-height: 150px; /* 最小高度 */
-      overflow-y: auto; /* 捲軸如果需要 */
+      height: auto; /* 自動高度，全顯示 */
+      min-height: 150px; /* 最小空間 */
+      overflow-y: auto; /* 長答案捲軸 */
       white-space: pre-wrap; /* 保持格式 */
       word-wrap: break-word; /* 自動換行 */
+      padding: 16px; /* 內距 */
     }
-    /* 捲軸樣式 */
+    /* 捲軸 */
     #response::-webkit-scrollbar {
-      width: 8px;
+      width: 6px;
     }
     #response::-webkit-scrollbar-track {
       background: #f1f1f1;
     }
     #response::-webkit-scrollbar-thumb {
       background: #888;
-      border-radius: 4px;
+      border-radius: 3px;
     }
     #response::-webkit-scrollbar-thumb:hover {
       background: #555;
     }
-    /* Markdown 緊湊 */
+    /* Markdown */
     .prose {
       max-width: 100%;
-      line-height: 1.4; /* 減間距 */
-      @apply prose-tight; /* 更緊湊 */
+      line-height: 1.4; /* 緊湊 */
+      margin: 0; /* 無多餘邊距 */
     }
     /* 容器 */
     .container {
-      width: 95%; /* 手機 95% 寬 */
-      max-width: 1280px; /* 電腦更寬 */
+      width: 90%; /* 手機 90% 寬 */
+      max-width: 1200px; /* 電腦寬 */
     }
     /* 手機觸控 */
     #response {
@@ -86,9 +87,9 @@
       <div>
         <label class="block text-sm font-medium mb-1">字體大小</label>
         <select id="font-size" class="w-full p-2 border rounded" onchange="updateStyles()">
-          <option value="12px">12px</option>
+          <option value="14px">14px</option>
           <option value="16px" selected>16px</option>
-          <option value="20px">20px</option>
+          <option value="18px">18px</option>
         </select>
       </div>
       <div>
@@ -121,45 +122,10 @@
         responseDiv.classList.remove("loading");
 
         if (!response.ok) {
-          throw new Error(`伺服器錯誤：${response.status} ${response.statusText}`);
+          throw new Error(`伺服器錯誤：${response.status}`);
         }
         const data = await response.json();
         if (data.response) {
           responseDiv.innerHTML = marked.parse(data.response);
         } else if (data.error) {
-          responseDiv.innerHTML = `錯誤：${data.error}`;
-        } else {
-          responseDiv.innerHTML = "無回應（伺服器無有效數據）";
-        }
-      } catch (error) {
-        responseDiv.classList.remove("loading");
-        responseDiv.innerHTML = `錯誤：無法連繫AI（${error.message}）。請稍後再試。`;
-      }
-    }
-
-    function updateStyles() {
-      const responseDiv = document.getElementById("response");
-      const fontFamily = document.getElementById("font-family").value;
-      const fontSize = document.getElementById("font-size").value;
-      const theme = document.getElementById("theme").value;
-      const body = document.getElementById("theme-body");
-
-      responseDiv.style.fontFamily = fontFamily;
-      responseDiv.style.fontSize = fontSize;
-
-      if (theme === "light") {
-        body.className = "bg-gray-100 flex items-center justify-center min-h-screen transition-all duration-300";
-        responseDiv.className = "mt-4 p-4 bg-gray-50 rounded border text-base prose";
-      } else if (theme === "dark") {
-        body.className = "bg-gray-800 flex items-center justify-center min-h-screen transition-all duration-300";
-        responseDiv.className = "mt-4 p-4 bg-gray-700 text-white rounded border border-gray-600 text-base prose";
-      } else if (theme === "blue") {
-        body.className = "bg-blue-100 flex items-center justify-center min-h-screen transition-all duration-300";
-        responseDiv.className = "mt-4 p-4 bg-blue-50 text-blue-900 rounded border border-blue-200 text-base prose";
-      }
-    }
-
-    updateStyles();
-  </script>
-</body>
-</html>
+          responseDiv.innerHTML = `錯誤
