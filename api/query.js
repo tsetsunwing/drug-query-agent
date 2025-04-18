@@ -1,5 +1,3 @@
-import fetch from "node-fetch";
-
 export default async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
@@ -11,6 +9,7 @@ export default async function handler(req, res) {
   }
 
   try {
+    const fetch = (await import("node-fetch")).default;
     const response = await fetch("https://api.x.ai/v1/grok", {
       method: "POST",
       headers: {
