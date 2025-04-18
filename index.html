@@ -8,13 +8,13 @@
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <style>
     #response {
-      min-height: 200px; /* 最小高度 */
-      max-height: 80vh; /* 最大佔螢幕 80% */
-      overflow-y: auto; /* 自動捲軸 */
+      height: auto; /* 全顯示 */
+      min-height: 150px; /* 最小高度 */
+      overflow-y: auto; /* 捲軸如果需要 */
       white-space: pre-wrap; /* 保持格式 */
       word-wrap: break-word; /* 自動換行 */
     }
-    /* 優化捲軸樣式 */
+    /* 捲軸樣式 */
     #response::-webkit-scrollbar {
       width: 8px;
     }
@@ -28,15 +28,30 @@
     #response::-webkit-scrollbar-thumb:hover {
       background: #555;
     }
-    /* 確保 Markdown 渲染整齊 */
+    /* Markdown 緊湊 */
     .prose {
       max-width: 100%;
-      line-height: 1.6;
+      line-height: 1.4; /* 減間距 */
+      @apply prose-tight; /* 更緊湊 */
     }
-    /* 響應式容器 */
+    /* 容器 */
     .container {
-      width: 95%; /* 手機用 95% 寬 */
-      max-width: 1024px; /* 電腦最多 1024px */
+      width: 95%; /* 手機 95% 寬 */
+      max-width: 1280px; /* 電腦更寬 */
+    }
+    /* 手機觸控 */
+    #response {
+      -webkit-overflow-scrolling: touch;
+    }
+    /* 載入動畫 */
+    .loading::after {
+      content: ".";
+      animation: dots 1.5s infinite;
+    }
+    @keyframes dots {
+      0% { content: "."; }
+      33% { content: ".."; }
+      66% { content: "..."; }
     }
   </style>
 </head>
@@ -94,7 +109,8 @@
     async function sendQuery() {
       const query = document.getElementById("query").value;
       const responseDiv = document.getElementById("response");
-      responseDiv.innerHTML = "正在查詢...";
+      responseDiv.innerHTML = "正在查詢";
+      responseDiv.classList.add("loading");
 
       try {
         const response = await fetch("/api/query", {
@@ -102,15 +118,22 @@
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ query }),
         });
+        responseDiv.classList.remove("loading");
+
+        if (!response.ok) {
+          throw new Error(`伺服器錯誤：${response.status} ${response.statusText}`);
+        }
         const data = await response.json();
         if (data.response) {
-          // 用 marked 解析 Markdown
           responseDiv.innerHTML = marked.parse(data.response);
+        } else if (data.error) {
+          responseDiv.innerHTML = `錯誤：${data.error}`;
         } else {
-          responseDiv.innerHTML = "無回應";
+          responseDiv.innerHTML = "無回應（伺服器無有效數據）";
         }
       } catch (error) {
-        responseDiv.innerHTML = "錯誤：無法連繫AI，請稍後再試。";
+        responseDiv.classList.remove("loading");
+        responseDiv.innerHTML = `錯誤：無法連繫AI（${error.message}）。請稍後再試。`;
       }
     }
 
@@ -121,11 +144,9 @@
       const theme = document.getElementById("theme").value;
       const body = document.getElementById("theme-body");
 
-      // 更新回應區字型同大小
       responseDiv.style.fontFamily = fontFamily;
       responseDiv.style.fontSize = fontSize;
 
-      // 更新主題
       if (theme === "light") {
         body.className = "bg-gray-100 flex items-center justify-center min-h-screen transition-all duration-300";
         responseDiv.className = "mt-4 p-4 bg-gray-50 rounded border text-base prose";
@@ -138,7 +159,6 @@
       }
     }
 
-    // 初次載入時應用預設樣式
     updateStyles();
   </script>
 </body>
