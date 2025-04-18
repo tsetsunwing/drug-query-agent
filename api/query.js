@@ -1,27 +1,24 @@
-export default async function handler(req, res) {
+const fetch = require("node-fetch");
+
+module.exports = async (req, res) => {
   if (req.method !== "POST") {
+    console.error("錯誤：只允許 POST 請求");
     return res.status(405).json({ error: "只允許 POST 請求" });
   }
 
   const { query } = req.body;
   if (!query) {
+    console.error("錯誤：無查詢內容");
     return res.status(400).json({ error: "請輸入查詢內容" });
   }
 
   try {
-    const fetch = (await import("node-fetch")).default;
-
-    // 加 timeout 控制（15秒）
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 15000);
-
     const response = await fetch("https://api.x.ai/v1/chat/completions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         "Authorization": `Bearer ${process.env.XAI_API_KEY}`,
       },
-      signal: controller.signal,
       body: JSON.stringify({
         messages: [
           {
@@ -35,48 +32,10 @@ export default async function handler(req, res) {
         ],
         model: "grok-3-latest",
         stream: false,
-        max_tokens: 200,
+        max_tokens: 100,
         temperature: 0,
       }),
+      timeout: 10000, // 10 秒 timeout
     });
 
-    clearTimeout(timeoutId);
-
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error(`xAI API 出錯：狀態碼 ${response.status}, 訊息：${errorText}`);
-      return res.status(500).json({ error: `API 請求失敗：${response.status} ${errorText}` });
-    }
-
-    const data = await response.json();
-    console.log("xAI API 回應：", JSON.stringify(data, null, 2));
-
-    let answer = "";
-    if (data.choices && Array.isArray(data.choices) && data.choices[0] && data.choices[0].message && data.choices[0].message.content) {
-      answer = data.choices[0].message.content.trim();
-    } else if (data.choices && Array.isArray(data.choices) && data.choices[0] && data.choices[0].text) {
-      answer = data.choices[0].text.trim();
-    } else if (data.text) {
-      answer = data.text.trim();
-    } else if (data.message) {
-      answer = data.message.trim();
-    } else if (data.response) {
-      answer = data.response.trim();
-    } else if (data.answer) {
-      answer = data.answer.trim();
-    } else if (typeof data === "string") {
-      answer = data.trim();
-    } else {
-      console.error("搵唔到有效答案：", data);
-      answer = "未收到有效回應，請稍後再試。";
-    }
-
-    res.status(200).json({ response: answer });
-  } catch (error) {
-    console.error("程式出錯：", error.message);
-    if (error.name === "AbortError") {
-      return res.status(504).json({ error: "API 請求超時，請稍後再試。" });
-    }
-    res.status(500).json({ error: `無法連繫 xAI API：${error.message}` });
-  }
-}
